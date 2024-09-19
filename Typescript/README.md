@@ -1141,3 +1141,201 @@ type T4 = InstanceType<Function>;
 > Type 'Function' provides no match for the signature 'new (...args: any): any'.
 > type T4 = any
 ```
+
+# XIII. Advanced Types
+
+Advanced types in TypeScript are a set of advanced type constructs that allow for more complex and expressive type systems.
+
+Some of the most commonly used advanced types in TypeScript include:
+
+- Intersection Types
+- Union Types
+- Type Aliases
+- Conditional Types
+- Indexed Access Types
+- Mapped Types
+- Type Guards
+
+## 1. Intersection Types
+
+```
+interface Colorful {
+  color: string;
+}
+interface Circle {
+  radius: number;
+}
+
+type ColorfulCircle = Colorful & Circle;
+```
+
+> Interfaces vs. Intersections
+
+- With interfaces, we could use an `extends` clause to extend from other types, and we were able to do something similar with intersections and name the result with a type alias.
+
+- The principal difference between the two is how conflicts are handled, and that difference is typically one of the main reasons why you’d pick one over the other between an interface and a type alias of an intersection type.
+
+- If interfaces are defined with the same name, TypeScript will attempt to merge them if the properties are compatible. If the properties are not compatible (i.e., they have the same property name but different types), TypeScript will raise an error.
+
+- In the case of intersection types, properties with different types will be merged automatically. When the type is used later, TypeScript will expect the property to satisfy both types simultaneously, which may produce unexpected results.
+
+For example, the following code will throw an error because the properties are incompatible:
+
+```
+interface Person {
+  name: string;
+}
+interface Person {
+  name: number;
+}
+```
+
+In contrast, the following code will compile, but it results in a `never` type:
+
+```
+interface Person1 {
+  name: string;
+}
+
+interface Person2 {
+  name: number;
+}
+
+type Staff = Person1 & Person2
+
+declare const staffer: Staff;
+staffer.name;
+// (property) name: never
+```
+
+## 2. Union Types
+
+## 3. Type Aliases
+
+## 4. Conditional Types
+
+```
+interface Animal {
+  live(): void;
+}
+interface Dog extends Animal {
+  woof(): void;
+}
+
+type Example1 = Dog extends Animal ? number : string;
+// type Example1 = number
+
+type Example2 = RegExp extends Animal ? number : string;
+// type Example2 = string
+```
+
+## 5. Indexed Access Types
+
+```
+type Person = { age: number; name: string; alive: boolean };
+type Age = Person["age"];
+> type Age = number
+```
+
+The indexing type is itself a type, so we can use unions, `keyof`, or other types entirely:
+
+```
+type I1 = Person["age" | "name"];
+// type I1 = string | number
+
+type I1 = Person[keyof Person];
+// type I1 = string | number | boolean
+```
+
+## 6. Mapped Types
+
+```
+type OnlyBoolsAndHorses = {
+  [key: string]: boolean | Horse;
+};
+
+const conforms: OnlyBoolsAndHorses = {
+  del: true,
+  rodney: false,
+};
+```
+
+Mapped types build on the syntax for index signatures, which are used to declare the types of properties which have not been declared ahead of time:
+
+```
+type OnlyBoolsAndHorses = {
+  [key: string]: boolean | Horse;
+};
+
+const conforms: OnlyBoolsAndHorses = {
+  del: true,
+  rodney: false,
+};
+```
+
+A mapped type is a generic type which uses a union of `PropertyKeys` (frequently created via a `keyof`) to iterate through keys to create a type:
+
+```
+type OptionsFlags<Type> = {
+  [Property in keyof Type]: boolean;
+};
+```
+
+In this example, `OptionsFlags` will take all the properties from the type `Type` and change their values to be a boolean.
+
+```
+type Features = {
+  darkMode: () => void;
+  newUserProfile: () => void;
+};
+
+type FeatureOptions = OptionsFlags<Features>;
+> type FeatureOptions = {
+>     darkMode: boolean;
+>     newUserProfile: boolean;
+> }
+```
+
+### Mapping Modifiers
+
+There are two additional modifiers which can be applied during mapping: `readonly` and `?` which affect mutability and optionality respectively.
+
+You can remove or add these modifiers by prefixing with `-` or `+`. If you don’t add a prefix, then `+` is assumed.
+
+```
+// Removes 'readonly' attributes from a type's properties
+type CreateMutable<Type> = {
+  -readonly [Property in keyof Type]: Type[Property];
+};
+
+type LockedAccount = {
+  readonly id: string;
+  readonly name: string;
+};
+
+type UnlockedAccount = CreateMutable<LockedAccount>;
+> type UnlockedAccount = {
+>     id: string;
+>     name: string;
+> }
+```
+
+```
+// Removes 'optional' attributes from a type's properties
+type Concrete<Type> = {
+  [Property in keyof Type]-?: Type[Property];
+};
+
+type MaybeUser = {
+  id: string;
+  name?: string;
+  age?: number;
+};
+
+type User = Concrete<MaybeUser>;
+> type User = {
+>     id: string;
+>     name: string;
+>     age: number;
+> }
+```
